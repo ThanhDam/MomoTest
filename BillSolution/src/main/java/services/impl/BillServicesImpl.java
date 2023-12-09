@@ -189,7 +189,7 @@ public class BillServicesImpl implements BillServices {
         Bill bill = getBillById(idBill);
         accountService = new AccountServicesImpl();
         if(bill.getBillId() != null && account.getId() != null){
-            long balance = account.getBalance();
+            long balance = accountService.getCurrenttUser().getBalance();
             if(balance < bill.getAmount()){
                 System.out.println("The balance doesn't enough for bill " + idBill
                         +" with balance: " + balance);

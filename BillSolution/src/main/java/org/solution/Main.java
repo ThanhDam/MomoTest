@@ -32,6 +32,7 @@ public class Main {
     }
 
     protected static void getBalance(Account acc){
+        acc = accountService.getCurrenttUser();
         System.out.println("The current balance: " + acc.getBalance());
     }
     protected static void cashIn(long amount) throws IOException {

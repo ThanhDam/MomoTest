@@ -5,7 +5,6 @@ import services.AccountServices;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -38,7 +37,7 @@ public class AccountServicesImpl implements AccountServices {
     public Account getCurrenttUser() {
         Account account1 = null;
         if (!new File("currentUser.txt").exists()) {
-            Account myself = new Account(1, "A", 0l);
+            Account myself = new Account(1, "A", 0L);
             writeObject(myself);
         }
         try {
@@ -46,11 +45,7 @@ public class AccountServicesImpl implements AccountServices {
             ObjectInputStream input = new ObjectInputStream(file);
             account1 = (Account) input.readObject();
             input.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IOException e) {
             throw new RuntimeException(e);
         }
         return account1;
@@ -62,8 +57,6 @@ public class AccountServicesImpl implements AccountServices {
             ObjectOutputStream obj = new ObjectOutputStream(file);
             obj.writeObject(myself);
             obj.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

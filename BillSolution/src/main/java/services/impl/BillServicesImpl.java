@@ -11,7 +11,6 @@ import services.PaymentServices;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -34,7 +33,7 @@ public class BillServicesImpl implements BillServices {
         //assume action load data from DB
         List<Bill> list = getListBill();
         if(list.stream().anyMatch(b -> b.getBillId().equals(bill.getBillId()))){
-            throw new Exception("Bill exists");
+            return null;
         }
         //assume action add element
         list.add(bill);
@@ -86,8 +85,7 @@ public class BillServicesImpl implements BillServices {
             //simulate dataO
             simulateListBill();
         }
-        List<Bill> bills = readObject();
-        return bills;
+        return readObject();
     }
 
     private void simulateListBill()  {
@@ -118,8 +116,6 @@ public class BillServicesImpl implements BillServices {
             obj.writeObject(bills);
             obj.close();
             file.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -131,15 +127,11 @@ public class BillServicesImpl implements BillServices {
         try{
             FileInputStream file = new FileInputStream("bills.txt");
             ObjectInputStream input = new ObjectInputStream(file);
-            bills = (ArrayList) input.readObject();
+            bills = (List) input.readObject();
             input.close();
             file.close();
-        } catch(ClassNotFoundException ex) {
+        } catch(ClassNotFoundException | IOException ex) {
             throw new RuntimeException(ex);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
         return bills;
     }
@@ -174,18 +166,22 @@ public class BillServicesImpl implements BillServices {
     @Override
     public List<Bill> getBillByProvider(String provider) {
         List<Bill> bills = getListBill();
-        List<Bill> list = bills.stream().filter(b-> b.getProvider().equals(provider))
+        return bills.stream().filter(b-> b.getProvider().equals(provider))
                 .collect(Collectors.toList());
-        return list;
+    }
+
+    @Override
+    public List<Bill> getBillByState(String state) {
+        List<Bill> bills = getListBill();
+        return bills.stream().filter(b-> b.getState().equals(state.toUpperCase()))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Bill> sortedBillByDueDate() {
         List<Bill> bills = getListBill();
-        List<Bill> list = bills.stream().filter(b-> b.getState().equals(BillStates.NOT_PAID.toString()))
-                .collect(Collectors.toList());
-        list.sort(Comparator.comparing(Bill::getDueDate));
-        return list;
+        return bills.stream().filter(b -> b.getState().equals(BillStates.NOT_PAID.toString()))
+                .sorted(Comparator.comparing(Bill::getDueDate)).collect(Collectors.toList());
     }
 
     @Override
@@ -201,7 +197,7 @@ public class BillServicesImpl implements BillServices {
                 System.out.println("The bill " + idBill + " has been paid!");
             } else {
                 balance -= bill.getAmount();
-                System.out.println("Paid bill" + idBill + " successfully!");
+                System.out.println("Paid bill " + idBill + " successfully!");
 
                 account.setBalance(balance);
                 account = accountService.updateBalance(account);
@@ -221,6 +217,20 @@ public class BillServicesImpl implements BillServices {
 
     @Override
     public void strategyPaidByDueDate(int idBill, Date dueDate, Account account) {
+        List<Bill> list = getListBill();
+        Bill bill = list.stream().filter(b->b.getBillId().equals(idBill))
+                .collect(Collectors.toList()).get(0);
+        Date today = new Date(System.currentTimeMillis());
+        if(dueDate.before(today)){
+            System.out.println("The scheduled date has passed so please pay ASAP! System is checking... ");
+            schedulePaidByDueDate(idBill, today, account);
+        } else {
+            System.out.println("Payment for bill " + idBill + " is scheduled on " + dueDate);
+            schedulePaidByDueDate(idBill, dueDate, account);
+        }
+    }
+
+    private void schedulePaidByDueDate(int idBill, Date dueDate, Account account) {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -228,7 +238,6 @@ public class BillServicesImpl implements BillServices {
             }
         };
         Timer timer = new Timer("Schedule");
-
         timer.schedule(task, dueDate);
     }
 }

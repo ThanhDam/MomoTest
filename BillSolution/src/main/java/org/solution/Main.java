@@ -1,4 +1,4 @@
-package org.example;
+package org.solution;
 
 import model.Account;
 import model.Bill;
@@ -19,12 +19,21 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class Main {
     static BillServices billService;
     static AccountServices accountService;
     static PaymentServices paymentServices;
+
+    public static void init(){
+        accountService = new AccountServicesImpl();
+        billService = new BillServicesImpl();
+        paymentServices = new PaymentServicesImpl();
+    }
+
+    protected static void getBalance(Account acc){
+        System.out.println("The current balance: " + acc.getBalance());
+    }
     protected static void cashIn(long amount) throws IOException {
         Account account = accountService.addAmount(amount);
         System.out.println("Balance: " + account.getBalance());
@@ -44,6 +53,11 @@ public class Main {
         list.forEach(b -> System.out.println(b.toString()));
     }
 
+    protected static void searchBillByState(String state){
+        List<Bill>list = billService.getBillByState(state);
+        list.forEach(b -> System.out.println(b.toString()));
+    }
+
     protected static void addBill(Bill bill) throws Exception {
         billService.create(bill);
         System.out.println("Add bill successful!");
@@ -60,24 +74,19 @@ public class Main {
     }
 
     protected static void schedule(int idBill, Date dueDate, Account acc){
-        List<Bill> list = billService.getListBill();
-        Bill bill = list.stream().filter(b->b.getBillId().equals(idBill))
-                .collect(Collectors.toList()).get(0);
-        if(dueDate.getTime() < bill.getDueDate().getTime()){
-            billService.strategyPaidByDueDate(idBill, dueDate, acc);
-            System.out.println("Payment for bill " + idBill + " is scheduled on " + dueDate);
-        } else{
-            System.out.println("Scheduled date is invalid!");
-        }
+        billService.strategyPaidByDueDate(idBill, dueDate, acc);
     }
 
-    protected static void specificFunction(String[] args, Account myself) throws Exception {
+    public static void specificFunction(String[] args, Account myself) throws Exception {
         String keyword = args[0];
-        billService = new BillServicesImpl();
         switch(keyword.toUpperCase(Locale.ROOT)){
+            case "CHECK_BALANCE":{
+                getBalance(myself);
+                break;
+            }
             case "CASH_IN":{
-                Long balance = Long.valueOf(args[1]);
-                cashIn(balance);
+                long amount = Long.parseLong(args[1]);
+                cashIn(amount);
                 break;
             }
             case "LIST_BILL":{
@@ -104,6 +113,12 @@ public class Main {
                 break;
             }
 
+            case "SEARCH_BILL_BY_STATE":{
+                String state = args[1];
+                searchBillByState(state);
+                break;
+            }
+
             case "ADD_BILL":{
                 //simulate input bill information:
                 // 4, "TEST_CREATE", 100000l,"30/9/2020", "NOT_PAID", "ACB"
@@ -120,7 +135,6 @@ public class Main {
             }
 
             case "LIST_PAYMENT":{
-                paymentServices = new PaymentServicesImpl();
                 getTransaction();
                 break;
             }
@@ -128,26 +142,26 @@ public class Main {
             case "SCHEDULE":{
                 List<String> tmp = Arrays.asList(args);
                 DateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-                int idBill = Integer.valueOf(tmp.get(1));
+                int idBill = Integer.parseInt(tmp.get(1));
                 Date dueDate = format.parse(tmp.get(2));
                 schedule(idBill, dueDate, myself);
                 break;
             }
 
             case "EXIT":{
-                System.exit(0);
+                System.exit(38);
             }
         }
     }
 
 
     public static void main(String[] args) throws Exception {
-        accountService = new AccountServicesImpl();
+        init();
         Account myself = accountService.getCurrenttUser();
         while(true){
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
-            String[] data = input.split(" ");
+            String[] data = input.split("\\s");
             specificFunction(data, myself);
         }
     }

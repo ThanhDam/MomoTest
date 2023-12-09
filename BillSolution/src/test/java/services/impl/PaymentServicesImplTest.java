@@ -10,12 +10,10 @@ import org.junit.jupiter.api.Test;
 import services.BillServices;
 import services.PaymentServices;
 
-import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class PaymentServicesImplTest {
 
@@ -24,7 +22,6 @@ public class PaymentServicesImplTest {
     @BeforeEach
     public void setUp(){
         service = new PaymentServicesImpl();
-        File file = new File("payments.txt");
     }
 
     @Test
@@ -47,14 +44,15 @@ public class PaymentServicesImplTest {
 
         //for happy case
         BillServices billServices = new BillServicesImpl();
-        Bill bill = billServices.create(new Bill(10, "UTEST_CREATE_PM", 100000l,
+        int id = new Random().nextInt();
+        Bill bill = billServices.create(new Bill(id, "UTEST_CREATE_PM", 100000l,
                 new Date(System.currentTimeMillis()),
                 BillStates.NOT_PAID.name(), "ACB"));
-        pm = new Payment(10, 10000L, new Date(System.currentTimeMillis()),
-                PaymentStates.PENDING.name(), 10);
+        pm = new Payment(id, 10000L, new Date(System.currentTimeMillis()),
+                PaymentStates.PENDING.name(), id);
         service.addPayment(pm);
         List<Payment> list = service.readObject();
-        result = list.stream().filter(p->p.getPaymentId().equals(10))
+        result = list.stream().filter(p->p.getPaymentId().equals(id))
                 .collect(Collectors.toList()).get(0);
         Assert.assertEquals(pm.getBillId(), result.getBillId());
     }

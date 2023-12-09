@@ -8,31 +8,30 @@ import model.PaymentStates;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
 import services.AccountServices;
 import services.BillServices;
 import services.PaymentServices;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class BillServicesImplTest {
 
-    BillServices service;
-    AccountServices accountServices;
+    @InjectMocks
+    BillServices service = new BillServicesImpl();
+    @InjectMocks
+    AccountServices accountServices = new AccountServicesImpl();
+    @InjectMocks
+    PaymentServices paymentServices = new PaymentServicesImpl();
 
     @BeforeEach
     public void setUp() {
         File file = new File("bills.txt");
         file.delete();
-        service = new BillServicesImpl();
-        accountServices = new AccountServicesImpl();
     }
 
     @Test
@@ -156,13 +155,50 @@ public class BillServicesImplTest {
         Date rescheduleDate = calendar.getTime();
         service.strategyPaidByDueDate(bill.getBillId(), rescheduleDate, acc);
 
-        Thread.sleep(5000);
+        Thread.sleep(6000);
         acc = accountServices.getCurrenttUser();
         Assert.assertEquals(Long.valueOf(10), acc.getBalance());
 
         Bill billAfter = service.getBillById(99);
         Assert.assertEquals(BillStates.PAID.toString(), billAfter.getState());
 
+        Payment pm = paymentServices.readObject().stream()
+                .filter(p->p.getBillId().equals(99))
+                .collect(Collectors.toList()).get(0);
+        Assert.assertEquals(PaymentStates.PROCESSED.toString(),
+                pm.getState());
+    }
+
+    @Test
+    public void testStrategyPaidByDueDate_NotPaidImmediately() throws Exception {
+        Calendar calendar = Calendar.getInstance();
+        Date today = new Date(System.currentTimeMillis());
+        calendar.setTime(today);
+        calendar.add(Calendar.DATE, 10);
+        Bill bill =  service.create(new Bill(999, "UTEST_CREATE", 100000l,
+                calendar.getTime(),
+                BillStates.NOT_PAID.name(), "ACB"));
+        Account acc = accountServices.getCurrenttUser();
+        acc.setBalance(100010L);
+        //update balance to make sure the transaction occurs
+        accountServices.updateBalance(acc);
+
+        calendar.add(Calendar.DATE, -5);
+        Date rescheduleDate = calendar.getTime();
+        service.strategyPaidByDueDate(bill.getBillId(), rescheduleDate, acc);
+
+        Thread.sleep(4000);
+        acc = accountServices.getCurrenttUser();
+        Assert.assertEquals(Long.valueOf(100010), acc.getBalance());
+
+        Bill billAfter = service.getBillById(999);
+        Assert.assertEquals(BillStates.NOT_PAID.toString(), billAfter.getState());
+
+        Payment pm = paymentServices.readObject().stream()
+                .filter(p->p.getBillId().equals(999))
+                .collect(Collectors.toList()).get(0);
+        Assert.assertEquals(PaymentStates.PENDING.toString(),
+                pm.getState());
 
     }
 }

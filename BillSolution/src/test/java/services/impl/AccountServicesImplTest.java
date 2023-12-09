@@ -2,17 +2,13 @@ package services.impl;
 
 import model.Account;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
 import services.AccountServices;
 
 import java.io.File;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+
 public class AccountServicesImplTest {
     AccountServices service = new AccountServicesImpl();
 
@@ -24,7 +20,6 @@ public class AccountServicesImplTest {
 
 
     @Test
-    @Order(2)
     public void addAmount() throws InterruptedException {
         Account acc = service.getCurrenttUser();
         long balance = acc.getBalance();
@@ -34,7 +29,6 @@ public class AccountServicesImplTest {
     }
 
     @Test
-    @Order(3)
     public void updateBalance() {
         Account accOld = new Account(1, "Nguyen Van A", 0l);
         Assert.assertEquals(1, (int)accOld.getId());
@@ -47,8 +41,8 @@ public class AccountServicesImplTest {
 
 
     @Test
-    @Order(1)
     public void getCurrentUser() throws InterruptedException {
+        clear();
         Account acc = service.getCurrenttUser();
         Thread.sleep(2000);
         Assert.assertNotNull(acc);

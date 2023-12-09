@@ -9,7 +9,6 @@ import java.util.List;
 public interface BillServices {
 
     void writeObjectBill(List<Bill> bills);
-
     List<Bill> readObject();
     Bill create(Bill bill) throws Exception;
     void update(Bill updateBill);
@@ -20,6 +19,8 @@ public interface BillServices {
     Bill getBillById(int id);
 
     List<Bill> getBillByProvider(String provider);
+
+    List<Bill> getBillByState(String state);
 
     List<Bill> sortedBillByDueDate();
 

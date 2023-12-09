@@ -7,7 +7,6 @@ import services.PaymentServices;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -46,8 +45,6 @@ public class PaymentServicesImpl implements PaymentServices {
             obj.writeObject(payments);
             obj.close();
             file.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -55,19 +52,15 @@ public class PaymentServicesImpl implements PaymentServices {
 
     @Override
     public List<Payment> readObject(){
-        List<Payment> list = new ArrayList<>();
+        List<Payment> list;
         try{
             FileInputStream file = new FileInputStream("payments.txt");
             ObjectInputStream input = new ObjectInputStream(file);
-            list = (ArrayList) input.readObject();
+            list = (List) input.readObject();
             input.close();
             file.close();
-        } catch(ClassNotFoundException ex) {
+        } catch(ClassNotFoundException | IOException ex) {
             throw new RuntimeException(ex);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
         return list;
     }
